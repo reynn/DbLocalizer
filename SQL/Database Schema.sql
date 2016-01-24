@@ -96,34 +96,47 @@ $$
 LANGUAGE plpgsql;
 
 -- trigger function to intercept when a resource is added to the main resources table and redirect to a child
--- if all resources are going to be stored in one table then this is not necessary, will look into a way to make
--- this more dynamic if possible.
-CREATE OR REPLACE FUNCTION public.resources_insert_trigger()
+-- if all resources are going to be stored in one table then this is not necessary.
+CREATE OR REPLACE FUNCTION resources_insert_trigger()
   RETURNS trigger
 AS
-$BODY$
-  begin
-
-  if NEW.resourcepage ilike 'about.aspx'
-  THEN
-
-    insert into resources_about values (NEW.*)
-    on conflict (resourcepage, culturecode, resourcekey) 
-    do update set resourcevalue = NEW.resourcevalue;
-
-  elseif NEW.resourcepage ilike 'default.aspx'
-  THEN
-
-    insert into resources_default values (NEW.*)
-    on conflict (resourcepage, culturecode, resourcekey) 
-    do update set resourcevalue = NEW.resourcevalue;
-
+$$
+declare
+  _table_name text = 'resources_';
+  _page_name text;
+begin
+  
+  _page_name := replace(replace(NEW.resourcepage, '\', '_'), '.aspx', '');
+  _table_name := _table_name || lower(_page_name);
+  
+  -- create a new table for this data if we dont have one yet.
+  if not (select exists(select * from information_schema.tables where table_schema = 'public' and table_name = _table_name))
+  then
+    
+    -- create the table with inheriting from resources and 
+    execute format('CREATE TABLE %s (check (resourcepage = ''%s'')) inherits (resources);', 
+                   quote_ident(_table_name), NEW.resourcepage, quote_ident(_table_name));
+    
+    execute format('CREATE UNIQUE INDEX ON %s (resourcepage, culturecode, resourcekey);', quote_ident(_table_name));
+    execute format('CREATE INDEX ON %s (culturecode);', quote_ident(_table_name));
+    execute format('CREATE INDEX ON %s (resourcekey);', quote_ident(_table_name));
+    execute format('CREATE INDEX ON %s (resourcevalue);', quote_ident(_table_name));
+    
   END IF;
+  
+  -- upsert the data into the correct table.
+  execute format('insert into %s (resourcepage, culturecode, resourcekey, resourcevalue) '||
+                  'values (%s, %s, %s, %s)'||
+                  'on conflict (resourcepage, culturecode, resourcekey)'|| 
+                  'do update set resourcevalue = %s', _table_name, 
+                 quote_literal(new.resourcepage), quote_literal(new.culturecode), 
+                 quote_literal(new.resourcekey), quote_literal(new.resourcevalue), 
+                 quote_literal(new.resourcevalue));
 
   return null;
 
 end;
-$BODY$
+$$
 LANGUAGE plpgsql VOLATILE;
 
 -- add the trigger to the resources table, skip this if storing all resources in one table.
