@@ -72,6 +72,17 @@ end;
 $$
 LANGUAGE plpgsql;
 
+-- get a list of all resources, regardless of page or culture.
+create function localize_get_all_resources () 
+returns setof resources
+as $$
+begin
+
+  return query select * from resources;
+
+end;
+$$
+language plpgsql;
 
 -- This is just to save a new resource to the database, all 4 values are required
 -- TODO: add exceptioning to the method

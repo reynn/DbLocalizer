@@ -38,6 +38,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DbExporter.cs" />
     <Compile Include="DbFunctions.cs" />
     <Compile Include="DbResourceProvider.cs" />
     <Compile Include="DbResourceProviderFactory.cs" />
@@ -70,6 +72,11 @@
     <None Include="packages.config" />
     <None Include="web.config.uninstall.xdt" />
     <None Include="web.config.install.xdt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SQL\Database Schema.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
