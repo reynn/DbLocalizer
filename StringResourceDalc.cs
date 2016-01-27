@@ -11,46 +11,18 @@ namespace DbLocalizer
 {
     public class StringResourcesDalc : IDisposable
     {
-        private readonly string _mDefaultResourceCulture = "en";
-        private readonly string _mResourceType;
-
-        private readonly NpgsqlConnection _mConnection;
-        private readonly NpgsqlCommand _mCmdGetResourceByCultureAndKey;
-        private readonly NpgsqlCommand _mCmdGetResourcesByCulture;
+        private readonly string _defaultResourceCulture = "en";
+        private readonly string _resourcePage;
 
         /// <summary>
         /// Constructs this instance of the data access 
         /// component supplying a resource type for the instance. 
         /// </summary>
-        /// <param name="resourceType">The resource type.</param>
-        public StringResourcesDalc(string resourceType)
+        /// <param name="resourcePage">The resource type.</param>
+        public StringResourcesDalc(string resourcePage)
         {
             // save the resource type for this instance
-            this._mResourceType = resourceType;
-
-            // grab the connection string
-            _mConnection = new NpgsqlConnection(ConfigurationManager.ConnectionStrings["localizationConnectionString"].ConnectionString);
-
-            // command to retrieve the resource the matches 
-            // a specific type, culture and key
-            _mCmdGetResourceByCultureAndKey = new NpgsqlCommand("localize_get_by_type_and_culture")
-            {
-                Connection = _mConnection,
-                CommandType = CommandType.StoredProcedure
-            };
-            _mCmdGetResourceByCultureAndKey.Parameters.AddWithValue("_resource_type", resourceType);
-            _mCmdGetResourceByCultureAndKey.Parameters.AddWithValue("_culture_code", string.Empty);
-            _mCmdGetResourceByCultureAndKey.Parameters.AddWithValue("_resource_key", string.Empty);
-
-            // command to retrieve all resources for a particular culture
-            _mCmdGetResourcesByCulture =
-                new NpgsqlCommand("localize_resources_by_culture")
-                {
-                    Connection = _mConnection,
-                    CommandType = CommandType.StoredProcedure
-                };
-            _mCmdGetResourcesByCulture.Parameters.AddWithValue("_resource_type", _mResourceType);
-            _mCmdGetResourcesByCulture.Parameters.AddWithValue("_culture_code", string.Empty);
+            this._resourcePage = resourcePage;
         }
 
         /// <summary>
@@ -72,33 +44,17 @@ namespace DbLocalizer
         /// Otherwise an empty string is returned.</returns>
         private string GetResourceByCultureAndKeyInternal(CultureInfo culture, string resourceKey)
         {
-
             // we should only get one back, but just in case, we'll iterate reader results
-            StringCollection resources = new StringCollection();
-            string resourceValue = null;
-
-            // set up the dynamic query params
-            _mCmdGetResourceByCultureAndKey.Parameters["_culture_code"].Value = culture.Name;
-            _mCmdGetResourceByCultureAndKey.Parameters["_resource_key"].Value = resourceKey;
-
-            // get resources from the database
-            if (_mConnection.FullState == ConnectionState.Closed)
-                _mConnection.Open();
-            using (NpgsqlDataReader reader = _mCmdGetResourceByCultureAndKey.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    resources.Add(reader.GetString(reader.GetOrdinal("resourceValue")));
-                }
-            }
+            var resources = new DbFunctions().GetResourceValue(_resourcePage, culture.Name, resourceKey);
 
             // we should only get 1 back, this is just to verify the tables aren't incorrect
             if (resources.Count == 0)
             {
                 // is this already fallback location?
-                if (culture.Name == this._mDefaultResourceCulture)
+                if (culture.Name == this._defaultResourceCulture)
                 {
-                    throw new InvalidOperationException(String.Format(Thread.CurrentThread.CurrentUICulture, Properties.Resource.RM_DefaultResourceNotFound, resourceKey));
+                    throw new InvalidOperationException(String.Format(Thread.CurrentThread.CurrentUICulture,
+                        Properties.Resource.RM_DefaultResourceNotFound, resourceKey));
                 }
 
                 // try to get parent culture
@@ -106,21 +62,18 @@ namespace DbLocalizer
                 if (culture.Name.Length == 0)
                 {
                     // there isn't a parent culture, change to neutral
-                    culture = new CultureInfo(this._mDefaultResourceCulture);
+                    culture = new CultureInfo(this._defaultResourceCulture);
                 }
-                resourceValue = this.GetResourceByCultureAndKeyInternal(culture, resourceKey);
-            }
-            else if (resources.Count == 1)
-            {
-                resourceValue = resources[0];
-            }
-            else
-            {
-                // if > 1 row returned, log an error, we shouldn't have > 1 value for a resourceKey!
-                throw new DataException(String.Format(Thread.CurrentThread.CurrentUICulture, Properties.Resource.RM_DuplicateResourceFound, resourceKey));
+                return this.GetResourceByCultureAndKeyInternal(culture, resourceKey);
             }
 
-            return resourceValue;
+            if (resources.Count == 1)
+            {
+                return resources[0].Value;
+            }
+            // if > 1 row returned, log an error, we shouldn't have > 1 value for a resourceKey!
+            throw new DataException(String.Format(Thread.CurrentThread.CurrentUICulture,
+                Properties.Resource.RM_DuplicateResourceFound, resourceKey));
         }
 
         /// <summary>
@@ -141,36 +94,16 @@ namespace DbLocalizer
             // make sure we have a default culture at least
             if (culture == null || culture.Name.Length == 0)
             {
-                culture = new CultureInfo(this._mDefaultResourceCulture);
+                culture = new CultureInfo(this._defaultResourceCulture);
             }
 
-            // set up dynamic query string parameters
-            _mCmdGetResourcesByCulture.Parameters["_culture_code"].Value = culture.Name;
             // create the dictionary
             ListDictionary resourceDictionary = new ListDictionary();
 
-            // open a connection to gather resource and create the dictionary
-            try
-            {
-                if (_mConnection.FullState == ConnectionState.Closed)
-                    _mConnection.Open();
+            // gather resource and create the dictionary
+            var resources = new DbFunctions().GetResourcesForPage(culture.Name, _resourcePage);
+            resources.ForEach(r => resourceDictionary.Add(r.Key, r.Value));
 
-                // get resources from the database
-                using (NpgsqlDataReader reader = this._mCmdGetResourcesByCulture.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string k = reader.GetString(reader.GetOrdinal("resourceKey"));
-                        string v = reader.GetString(reader.GetOrdinal("resourceValue"));
-
-                        resourceDictionary.Add(k, v);
-                    }
-                }
-            }
-            finally
-            {
-                _mConnection.Close();
-            }
             return resourceDictionary;
         }
 
@@ -187,43 +120,13 @@ namespace DbLocalizer
         [MethodImpl(MethodImplOptions.Synchronized)]
         public string GetResourceByCultureAndKey(CultureInfo culture, string resourceKey)
         {
-            string resourceValue = string.Empty;
-
-            try
-            {
-
-                // make sure we have a default culture at least
-                if (culture == null || culture.Name.Length == 0)
-                {
-                    culture = new CultureInfo(this._mDefaultResourceCulture);
-                }
-
-                // open the connection before we call the recursive reading function
-                this._mConnection.Open();
-
-                // recurse to find resource, includes fallback behavior
-                resourceValue = this.GetResourceByCultureAndKeyInternal(culture, resourceKey);
-            }
-            finally
-            {
-                // cleanup the connection, reader won't do that if it was open prior to calling in, and that's what we wanted
-                this._mConnection.Close();
-            }
-            return resourceValue;
+            return GetResourceByCultureAndKeyInternal(culture, resourceKey);
         }
 
         #region IDisposable Members
 
         public void Dispose()
         {
-            try
-            {
-                // TODO: add in idisposable pattern, check what we're cleaning up here
-                this._mCmdGetResourceByCultureAndKey.Dispose();
-                this._mCmdGetResourcesByCulture.Dispose();
-                this._mConnection.Dispose();
-            }
-            catch { }
         }
 
         #endregion

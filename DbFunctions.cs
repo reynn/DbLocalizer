@@ -33,6 +33,32 @@ namespace DbLocalizer
             ConnectionString = connString;
         }
 
+        public List<ResourceRecord> GetResourceValue(string page, string culture, string key)
+        {
+            var resources = new List<ResourceRecord>();
+
+            using (var conn = new NpgsqlConnection(ConnectionString))
+            {
+                using (var cmd = new NpgsqlCommand("localize_get_by_type_and_culture")
+                    {
+                        CommandType = CommandType.StoredProcedure
+                    })
+                {
+                    cmd.Connection = conn;
+                    conn.Open();
+
+                    cmd.Parameters.AddWithValue("_resource_type", NpgsqlDbType.Text, page);
+                    cmd.Parameters.AddWithValue("_culture_code", NpgsqlDbType.Text, culture);
+                    cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, key);
+
+                    using (var reader = cmd.ExecuteReader())
+                        resources.Add(new ResourceRecord(reader));
+                }
+            }
+
+            return resources;
+        }
+
         public List<ResourceRecord> GetResourcesForPage(string culture, string page)
         {
             var records = new List<ResourceRecord>();
