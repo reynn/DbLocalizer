@@ -11,7 +11,7 @@ namespace DbLocalizer
 {
     public class StringResourcesDalc : IDisposable
     {
-        private readonly string _defaultResourceCulture = "en";
+        private readonly string _defaultResourceCulture = "en-US";
         private readonly string _resourcePage;
 
         /// <summary>
@@ -23,6 +23,8 @@ namespace DbLocalizer
         {
             // save the resource type for this instance
             this._resourcePage = resourcePage;
+            if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["defaultCulture"]))
+                _defaultResourceCulture = ConfigurationManager.AppSettings["defaultCulture"];
         }
 
         /// <summary>
@@ -44,6 +46,9 @@ namespace DbLocalizer
         /// Otherwise an empty string is returned.</returns>
         private string GetResourceByCultureAndKeyInternal(CultureInfo culture, string resourceKey)
         {
+            if (string.IsNullOrEmpty(culture.Name))
+                culture = CultureInfo.CurrentUICulture;
+
             // we should only get one back, but just in case, we'll iterate reader results
             var resources = new DbFunctions().GetResourceValue(_resourcePage, culture.Name, resourceKey);
 
@@ -59,7 +64,7 @@ namespace DbLocalizer
 
                 // try to get parent culture
                 culture = culture.Parent;
-                if (culture.Name.Length == 0)
+                if (string.IsNullOrEmpty(culture.Name))
                 {
                     // there isn't a parent culture, change to neutral
                     culture = new CultureInfo(this._defaultResourceCulture);

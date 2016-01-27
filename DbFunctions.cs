@@ -47,12 +47,13 @@ namespace DbLocalizer
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_type", NpgsqlDbType.Text, page);
+                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, page);
                     cmd.Parameters.AddWithValue("_culture_code", NpgsqlDbType.Text, culture);
                     cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, key);
 
                     using (var reader = cmd.ExecuteReader())
-                        resources.Add(new ResourceRecord(reader));
+                        while(reader.Read())
+                            resources.Add(new ResourceRecord(reader));
                 }
             }
 

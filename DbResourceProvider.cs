@@ -10,6 +10,7 @@ namespace DbLocalizer
     public class DbResourceProvider : DisposableBaseType, IResourceProvider
     {
         private string _mClassKey;
+        private bool _globalResource;
         private StringResourcesDalc _mDalc;
 
         // resource cache
@@ -20,11 +21,11 @@ namespace DbLocalizer
         /// supplying a resource type for the instance. 
         /// </summary>
         /// <param name="resourceType">The resource type.</param>
-        public DbResourceProvider(string classKey)
+        public DbResourceProvider(string classKey, bool globalResource = false)
         {
             this._mClassKey = classKey;
             _mDalc = new StringResourcesDalc(classKey);
-
+            _globalResource = globalResource;
         }
 
         #region IResourceProvider Members
@@ -40,7 +41,7 @@ namespace DbLocalizer
         /// <param name="culture">The culture to search with.</param>
         /// <returns>If found, the resource string is returned. 
         /// Otherwise an empty string is returned.</returns>
-        public object GetObject(string resourceKey, System.Globalization.CultureInfo culture)
+        public object GetObject(string resourceKey, CultureInfo culture)
         {
             if (Disposed)
             {
@@ -52,7 +53,7 @@ namespace DbLocalizer
                 throw new ArgumentNullException("resourceKey");
             }
 
-            if (culture == null)
+            if (culture == null || string.IsNullOrEmpty(culture.Name))
             {
                 culture = CultureInfo.CurrentUICulture;
             }

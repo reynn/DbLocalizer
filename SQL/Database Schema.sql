@@ -8,21 +8,6 @@ CREATE TABLE resources
     resourcepage TEXT
 );
 
--- partitioned tables, these will hold the actual data, can have as many or none of these if desired.
-CREATE TABLE resources_about (check (resourcepage = 'About.aspx')) inherits (resources);
-CREATE TABLE resources_default (check (resourcepage = 'Default.aspx')) inherits (resources);
-
--- 
-CREATE UNIQUE INDEX ON resources_about (resourcepage, culturecode, resourcekey);
-CREATE INDEX ON resources_about (culturecode);
-CREATE INDEX ON resources_about (resourcekey);
-CREATE INDEX ON resources_about (resourcevalue);
-
-CREATE UNIQUE INDEX ON resources_default (resourcepage, culturecode, resourcekey);
-CREATE INDEX ON resources_default (culturecode);
-CREATE INDEX ON resources_default (resourcekey);
-CREATE INDEX ON resources_default (resourcevalue);
-
 -- Get a specific value pased on page, culture and key
 CREATE OR REPLACE FUNCTION localize_get_by_type_and_culture (
     _resource_page text, 
@@ -117,7 +102,7 @@ declare
   _page_name text;
 begin
   
-  _page_name := replace(replace(NEW.resourcepage, '\', '_'), '.aspx', '');
+  _page_name := replace(replace(replace(NEW.resourcepage, '\', '_'), '.ascx', ''), '.aspx', '');
   _table_name := _table_name || lower(_page_name);
   
   -- create a new table for this data if we dont have one yet.

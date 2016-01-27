@@ -68,44 +68,54 @@ namespace DbLocalizer
             var files = Directory.EnumerateFiles(basePath, "*.resx", SearchOption.AllDirectories);
             foreach (string file in files)
             {
-                ImportResxFile(file, basePath, defaultCulture);
+                // TODO: this is just filtering out globalresources and stuff from the bin/obj, feel like there is a better way to do this.
+                if (file.Contains(@"\obj\") || file.Contains(@"\bin\")) continue;
+                ImportResxFile(file, basePath, defaultCulture, file.Contains("App_GlobalResources"));
             }
         }
 
-        public void ImportResxFile(string resxPath, string rootPath, string defaultCulture = "en-US")
+        public void ImportResxFile(string resxPath, string rootPath, string defaultCulture = "en-US", bool globalResource = false)
         {
             using (var resxFile = new ResXResourceReader(resxPath))
             {
                 var dictEnumerator = resxFile.GetEnumerator();
                 while (dictEnumerator.MoveNext())
                 {
-                    var record = new ResourceRecord
+                    var record = new ResourceRecord(_connectionString)
                     {
-                        Page = GetPagePath(resxPath, rootPath),
-                        CultureCode = GetCulture(resxPath, defaultCulture),
+                        Page = GetPagePath(resxPath, rootPath, globalResource),
+                        CultureCode = GetCulture(resxPath, defaultCulture, globalResource),
                         Key = dictEnumerator.Key.ToString(),
                         Value = dictEnumerator.Value.ToString()
                     };
                     record.Save();
+                    Console.WriteLine(string.Format("Saved record for page {0}, key: {1} value: {2}", record.Page, record.Key, record.Value));
                 }
             }
         }
 
-        private string GetPagePath(string path, string rootPath)
+        private string GetPagePath(string path, string rootPath, bool globalResource = false)
         {
             var tempPath = path.Replace(rootPath, string.Empty);
             var splits = tempPath.Split('.');
-            return string.Format("{0}.{1}", splits[0].Replace("App_LocalResources\\", string.Empty), splits[1]);
+            return string.Format("{0}.{1}",
+                splits[0].Replace("App_LocalResources\\", string.Empty).Replace("App_GlobalResources", "Global"),
+                globalResource ? string.Empty : splits[1]).Trim('.');
         }
 
-        private string GetCulture(string path, string defaultCulture)
+        private string GetCulture(string path, string defaultCulture, bool globalResource = false)
         {
-            string temp = path.Substring(path.LastIndexOf("\\")+1);
-
-            if (temp.EndsWith(".aspx.resx", StringComparison.InvariantCultureIgnoreCase))
-                return defaultCulture;
+            string temp = path.Substring(path.LastIndexOf("\\") + 1);
 
             var splitTemp = temp.Split('.');
+
+            if (globalResource)
+                return splitTemp.Length == 2 ? defaultCulture : splitTemp[1];
+
+            if (temp.EndsWith(".aspx.resx", StringComparison.InvariantCultureIgnoreCase) ||
+                temp.EndsWith(".ascx.resx", StringComparison.InvariantCultureIgnoreCase) ||
+                temp.EndsWith(".Master.resx", StringComparison.InvariantCultureIgnoreCase))
+                return defaultCulture;
 
             if (splitTemp.Length <= 2)
                 return defaultCulture;
