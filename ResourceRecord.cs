@@ -8,10 +8,10 @@ namespace DbLocalizer
 {
     public class ResourceRecord
     {
-        public string ResourcePage { get; set; }
+        public string Page { get; set; }
         public string CultureCode { get; set; }
-        public string ResourceKey { get; set; }
-        public string ResourceValue { get; set; }
+        public string Key { get; set; }
+        public string Value { get; set; }
 
         public ResourceRecord()
         {
@@ -19,10 +19,10 @@ namespace DbLocalizer
 
         public ResourceRecord(DbDataReader reader)
         {
-            ResourcePage = reader.GetString(reader.GetOrdinal("resourcepage"));
+            Page = reader.GetString(reader.GetOrdinal("resourcepage"));
             CultureCode = reader.GetString(reader.GetOrdinal("culturecode"));
-            ResourceKey = reader.GetString(reader.GetOrdinal("resourcekey"));
-            ResourceValue = reader.GetString(reader.GetOrdinal("resourcevalue"));
+            Key = reader.GetString(reader.GetOrdinal("resourcekey"));
+            Value = reader.GetString(reader.GetOrdinal("resourcevalue"));
         }
 
         public void Save()
@@ -34,10 +34,10 @@ namespace DbLocalizer
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, ResourcePage);
+                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, Page);
                     cmd.Parameters.AddWithValue("_culture_code", NpgsqlDbType.Text, CultureCode);
-                    cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, ResourceKey);
-                    cmd.Parameters.AddWithValue("_resource_value", NpgsqlDbType.Text, ResourceValue);
+                    cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, Key);
+                    cmd.Parameters.AddWithValue("_resource_value", NpgsqlDbType.Text, Value);
                     
                     bool success = bool.Parse(cmd.ExecuteScalar().ToString());
                     if (!success)

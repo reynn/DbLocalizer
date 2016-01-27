@@ -58,7 +58,7 @@ namespace DbLocalizer
         {
             var resObjects = GetResourcesForPage(culture, page);
 
-            return resObjects.ToDictionary(record => record.ResourceKey, record => record.ResourceValue);
+            return resObjects.ToDictionary(record => record.Key, record => record.Value);
         }
 
         public List<ResourceRecord> GetResourceForPageNoCulture(string page)

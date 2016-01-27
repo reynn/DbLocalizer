@@ -47,7 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DbExporter.cs" />
+    <Compile Include="DbImporterExporter.cs" />
     <Compile Include="DbFunctions.cs" />
     <Compile Include="DbResourceProvider.cs" />
     <Compile Include="DbResourceProviderFactory.cs" />
