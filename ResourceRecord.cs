@@ -8,7 +8,7 @@ namespace DbLocalizer
 {
     public class ResourceRecord
     {
-        private string _connectionString;
+        private readonly string _connectionString;
         public string Page { get; set; }
         public string CultureCode { get; set; }
         public string Key { get; set; }

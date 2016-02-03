@@ -33,16 +33,16 @@ namespace DbLocalizer
             ConnectionString = connString;
         }
 
-        public List<ResourceRecord> GetResourceValue(string page, string culture, string key)
+        public ResourceRecord GetResourceValue(string page, string culture, string key)
         {
-            var resources = new List<ResourceRecord>();
+            ResourceRecord resource = null;
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
                 using (var cmd = new NpgsqlCommand("localize_get_by_type_and_culture")
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    })
+                {
+                    CommandType = CommandType.StoredProcedure
+                })
                 {
                     cmd.Connection = conn;
                     conn.Open();
@@ -52,12 +52,11 @@ namespace DbLocalizer
                     cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, key);
 
                     using (var reader = cmd.ExecuteReader())
-                        while(reader.Read())
-                            resources.Add(new ResourceRecord(reader));
+                        while (reader.Read())
+                            resource = new ResourceRecord(reader);
                 }
             }
-
-            return resources;
+            return resource;
         }
 
         public List<ResourceRecord> GetResourcesForPage(string culture, string page)
@@ -110,7 +109,27 @@ namespace DbLocalizer
             return records;
         }
 
-        public List<ResourceRecord> GetAllResources()
+        public List<string> GetPageList()
+        {
+            var records = new List<string>();
+
+            using (var conn = new NpgsqlConnection(ConnectionString))
+            {
+                using (var cmd = new NpgsqlCommand("localize_get_all_unique_pages") { CommandType = CommandType.StoredProcedure })
+                {
+                    cmd.Connection = conn;
+                    conn.Open();
+
+                    using (var reader = cmd.ExecuteReader())
+                        while (reader.Read())
+                            records.Add(reader[0].ToString());
+                }
+            }
+
+            return records;
+        } 
+
+        public List<ResourceRecord> GetAllResources(string page = "", int limit = 0, int offset = 0)
         {
             var records = new List<ResourceRecord>();
 
@@ -120,6 +139,10 @@ namespace DbLocalizer
                 {
                     cmd.Connection = conn;
                     conn.Open();
+
+                    cmd.Parameters.AddWithValue("_page", NpgsqlDbType.Text, page);
+                    cmd.Parameters.AddWithValue("_limit", NpgsqlDbType.Integer, limit);
+                    cmd.Parameters.AddWithValue("_offset", NpgsqlDbType.Integer, offset);
 
                     using (var reader = cmd.ExecuteReader())
                         while (reader.Read())

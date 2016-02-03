@@ -9,12 +9,12 @@ namespace DbLocalizer
 {
     public class DbResourceProvider : DisposableBaseType, IResourceProvider
     {
-        private string _mClassKey;
         private bool _globalResource;
-        private StringResourcesDalc _mDalc;
+        private readonly StringResourcesDalc _mDalc;
 
         // resource cache
-        private readonly Dictionary<string, Dictionary<string, string>> _mResourceCache = new Dictionary<string, Dictionary<string, string>>();
+        private readonly Dictionary<string, Dictionary<string, string>> _mResourceCache = 
+            new Dictionary<string, Dictionary<string, string>>();
 
         /// <summary>
         /// Constructs this instance of the provider 
@@ -23,7 +23,6 @@ namespace DbLocalizer
         /// <param name="resourceType">The resource type.</param>
         public DbResourceProvider(string classKey, bool globalResource = false)
         {
-            this._mClassKey = classKey;
             _mDalc = new StringResourcesDalc(classKey);
             _globalResource = globalResource;
         }
@@ -73,23 +72,23 @@ namespace DbLocalizer
             }
 
             // if not in the cache, go to the database
-            if (resourceValue == null)
-            {
-                resourceValue = _mDalc.GetResourceByCultureAndKey(culture, resourceKey);
+            if (resourceValue != null) return resourceValue;
 
-                // add this result to the cache
-                // find the dictionary for this culture
-                // add this key/value pair to the inner dictionary
-                lock (this)
+            resourceValue = _mDalc.GetResourceByCultureAndKey(culture, resourceKey);
+
+            // add this result to the cache
+            // find the dictionary for this culture
+            // add this key/value pair to the inner dictionary
+            lock (this)
+            {
+                if (resCacheByCulture == null)
                 {
-                    if (resCacheByCulture == null)
-                    {
-                        resCacheByCulture = new Dictionary<string, string>();
-                        _mResourceCache.Add(culture.Name, resCacheByCulture);
-                    }
-                    resCacheByCulture.Add(resourceKey, resourceValue);
+                    resCacheByCulture = new Dictionary<string, string>();
+                    _mResourceCache.Add(culture.Name, resCacheByCulture);
                 }
+                resCacheByCulture.Add(resourceKey, resourceValue);
             }
+
             return resourceValue;
         }
 
@@ -107,7 +106,6 @@ namespace DbLocalizer
 
                 // this is required for implicit resources 
                 // this is also used for the expression editor sheet 
-
                 ListDictionary resourceDictionary = this._mDalc.GetResourcesByCulture(CultureInfo.InvariantCulture);
 
                 return new DbResourceReader(resourceDictionary);

@@ -53,7 +53,7 @@ namespace DbLocalizer
             var resources = new DbFunctions().GetResourceValue(_resourcePage, culture.Name, resourceKey);
 
             // we should only get 1 back, this is just to verify the tables aren't incorrect
-            if (resources.Count == 0)
+            if (resources == null || string.IsNullOrEmpty(resources.Value))
             {
                 // is this already fallback location?
                 if (culture.Name == this._defaultResourceCulture)
@@ -68,17 +68,11 @@ namespace DbLocalizer
                 {
                     // there isn't a parent culture, change to neutral
                     culture = new CultureInfo(this._defaultResourceCulture);
-                }
+                } 
                 return this.GetResourceByCultureAndKeyInternal(culture, resourceKey);
             }
 
-            if (resources.Count == 1)
-            {
-                return resources[0].Value;
-            }
-            // if > 1 row returned, log an error, we shouldn't have > 1 value for a resourceKey!
-            throw new DataException(String.Format(Thread.CurrentThread.CurrentUICulture,
-                Properties.Resource.RM_DuplicateResourceFound, resourceKey));
+            return resources.Value;
         }
 
         /// <summary>
