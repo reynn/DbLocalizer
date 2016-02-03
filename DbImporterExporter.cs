@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -108,19 +109,11 @@ namespace DbLocalizer
             string temp = path.Substring(path.LastIndexOf("\\") + 1);
 
             var splitTemp = temp.Split('.');
+            string culture = splitTemp[splitTemp.Length - 1];
+            // check to see if we got the culture
+            CultureInfo info = new CultureInfo(culture);
 
-            if (globalResource)
-                return splitTemp.Length == 2 ? defaultCulture : splitTemp[1];
-
-            if (temp.EndsWith(".aspx.resx", StringComparison.InvariantCultureIgnoreCase) ||
-                temp.EndsWith(".ascx.resx", StringComparison.InvariantCultureIgnoreCase) ||
-                temp.EndsWith(".Master.resx", StringComparison.InvariantCultureIgnoreCase))
-                return defaultCulture;
-
-            if (splitTemp.Length <= 2)
-                return defaultCulture;
-
-            return splitTemp[2];
+            return string.IsNullOrEmpty(info.Name) ? defaultCulture : info.Name;
         }
     }
 }
