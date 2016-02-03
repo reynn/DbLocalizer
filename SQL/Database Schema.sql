@@ -124,7 +124,7 @@ declare
   _page_name text;
 begin
 
-  _page_name := replace(replace(replace(NEW.resourcepage, '\', '_'), '.ascx', ''), '.aspx', '');
+  _page_name := replace(replace(replace(replace(NEW.resourcepage, '\', '_'), '.Master', ''), '.ascx', ''), '.aspx', '');
   _table_name := _table_name || lower(_page_name);
 
   -- create a new table for this data if we dont have one yet.

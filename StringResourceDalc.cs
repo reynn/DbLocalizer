@@ -58,8 +58,8 @@ namespace DbLocalizer
                 // is this already fallback location?
                 if (culture.Name == this._defaultResourceCulture)
                 {
-                    throw new InvalidOperationException(String.Format(Thread.CurrentThread.CurrentUICulture,
-                        Properties.Resource.RM_DefaultResourceNotFound, resourceKey));
+                    // if we can't get a resource return an empty string
+                    return string.Empty;
                 }
 
                 // try to get parent culture

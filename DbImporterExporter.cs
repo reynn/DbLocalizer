@@ -85,7 +85,7 @@ namespace DbLocalizer
                     var record = new ResourceRecord(_connectionString)
                     {
                         Page = GetPagePath(resxPath, rootPath, globalResource),
-                        CultureCode = GetCulture(resxPath, defaultCulture, globalResource),
+                        CultureCode = GetCulture(resxPath, defaultCulture),
                         Key = dictEnumerator.Key.ToString(),
                         Value = dictEnumerator.Value.ToString()
                     };
@@ -100,20 +100,28 @@ namespace DbLocalizer
             var tempPath = path.Replace(rootPath, string.Empty);
             var splits = tempPath.Split('.');
             return string.Format("{0}.{1}",
-                splits[0].Replace("App_LocalResources\\", string.Empty).Replace("App_GlobalResources", "Global"),
+                splits[0].Replace("App_LocalResources\\", string.Empty),
                 globalResource ? string.Empty : splits[1]).Trim('.');
         }
 
-        private string GetCulture(string path, string defaultCulture, bool globalResource = false)
+        private string GetCulture(string path, string defaultCulture)
         {
             string temp = path.Substring(path.LastIndexOf("\\") + 1);
 
             var splitTemp = temp.Split('.');
-            string culture = splitTemp[splitTemp.Length - 1];
+            string culture = splitTemp[splitTemp.Length - 2];
             // check to see if we got the culture
-            CultureInfo info = new CultureInfo(culture);
+            CultureInfo info;
+            try
+            {
+                info = new CultureInfo(culture);
+            }
+            catch (CultureNotFoundException cnfe)
+            {
+                return defaultCulture;
+            }
 
-            return string.IsNullOrEmpty(info.Name) ? defaultCulture : info.Name;
+            return info.Name;
         }
     }
 }
