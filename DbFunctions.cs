@@ -39,7 +39,7 @@ namespace DbLocalizer
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_get_by_type_and_culture")
+                using (var cmd = new NpgsqlCommand("dblocalizer_get_by_type_and_culture")
                 {
                     CommandType = CommandType.StoredProcedure
                 })
@@ -64,7 +64,7 @@ namespace DbLocalizer
             var records = new List<ResourceRecord>();
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_resources_by_culture") {CommandType = CommandType.StoredProcedure})
+                using (var cmd = new NpgsqlCommand("dblocalizer_resources_by_culture") {CommandType = CommandType.StoredProcedure})
                 {
                     cmd.Connection = conn;
                     conn.Open();
@@ -93,7 +93,7 @@ namespace DbLocalizer
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_resources_by_page_all_cultures") { CommandType = CommandType.StoredProcedure })
+                using (var cmd = new NpgsqlCommand("dblocalizer_resources_by_page_all_cultures") { CommandType = CommandType.StoredProcedure })
                 {
                     cmd.Connection = conn;
                     conn.Open();
@@ -115,7 +115,7 @@ namespace DbLocalizer
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_get_all_unique_pages") { CommandType = CommandType.StoredProcedure })
+                using (var cmd = new NpgsqlCommand("dblocalizer_get_all_unique_pages") { CommandType = CommandType.StoredProcedure })
                 {
                     cmd.Connection = conn;
                     conn.Open();
@@ -135,7 +135,7 @@ namespace DbLocalizer
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_get_all_resources") { CommandType = CommandType.StoredProcedure })
+                using (var cmd = new NpgsqlCommand("dblocalizer_get_all_resources") { CommandType = CommandType.StoredProcedure })
                 {
                     cmd.Connection = conn;
                     conn.Open();
