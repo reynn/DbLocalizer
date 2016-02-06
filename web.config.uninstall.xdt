@@ -1,0 +1,9 @@
+﻿<?xml version="1.0"?>
+<configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
+	<connectionStrings>
+		<add name="localizationConnectionString" connectionString="[NEEDS_INFORMATION]" xdt:Transform="Remove" xdt:Locator="Match(name)"/>
+	</connectionStrings>
+    <system.web>
+		<globalization culture="en-US" uiCulture="en-US" resourceProviderFactoryType="DbLocalizer.DbResourceProviderFactory" xdt:Transform="Remove" xdt:Locator="Match(name)" />
+    </system.web>
+</configuration>

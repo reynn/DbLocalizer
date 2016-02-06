@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Nicholas Patterson</authors>
+    <owners>Nicholas Patterson</owners>
+    <licenseUrl>https://github.com/reynn/DbLocalizer/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/reynn/DbLocalizer</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Resource provider for .net applications that allows localizations from a database, this particular version is geared towards ASP.NET using a PostgreSQL database.</description>
+    <releaseNotes>Initial Release</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+  </metadata>
+</package>
