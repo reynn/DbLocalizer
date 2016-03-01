@@ -39,21 +39,22 @@ namespace DbLocalizer
 
             using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                using (var cmd = new NpgsqlCommand("dblocalizer_get_by_type_and_culture")
-                {
-                    CommandType = CommandType.StoredProcedure
-                })
+                using (var cmd = new NpgsqlCommand("dblocalizer_get_by_type_and_culture"))
                 {
                     cmd.Connection = conn;
+                    cmd.CommandType = CommandType.StoredProcedure;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, page);
-                    cmd.Parameters.AddWithValue("_culture_code", NpgsqlDbType.Text, culture);
-                    cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, key);
+                    cmd.AddParameters(new Dictionary<string, object>
+                    {
+                        {"_resource_page", page},
+                        {"_culture_code", culture},
+                        {"_resource_key", key}
+                    });
 
-                    using (var reader = cmd.ExecuteReader())
-                        while (reader.Read())
-                            resource = new ResourceRecord(reader);
+                    using (var comReader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
+                        while (comReader.Read())
+                            resource = new ResourceRecord(comReader);
                 }
             }
             return resource;
@@ -69,8 +70,11 @@ namespace DbLocalizer
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_type", page);
-                    cmd.Parameters.AddWithValue("_culture_code", culture);
+                    cmd.AddParameters(new Dictionary<string, object>
+                    {
+                        {"_resource_page", page},
+                        {"_culture_code", culture},
+                    });
 
                     using (var reader = cmd.ExecuteReader())
                         while (reader.Read())
@@ -98,7 +102,7 @@ namespace DbLocalizer
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, page);
+                    cmd.AddParameters(new Dictionary<string, object> {{"_resource_page", page}});
 
                     using (var reader = cmd.ExecuteReader())
                         while (reader.Read())
@@ -140,9 +144,12 @@ namespace DbLocalizer
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_page", NpgsqlDbType.Text, page);
-                    cmd.Parameters.AddWithValue("_limit", NpgsqlDbType.Integer, limit);
-                    cmd.Parameters.AddWithValue("_offset", NpgsqlDbType.Integer, offset);
+                    cmd.AddParameters(new Dictionary<string, object>
+                    {
+                        {"_page", page},
+                        {"_limit", limit},
+                        {"_offset", offset}
+                    });
 
                     using (var reader = cmd.ExecuteReader())
                         while (reader.Read())
@@ -151,6 +158,51 @@ namespace DbLocalizer
             }
 
             return records;
+        }
+    }
+
+    public static class NpgsqlExtensions
+    {
+        public static void AddParameters(this NpgsqlCommand command, Dictionary<string, object> parameters)
+        {
+            // if a connection hasn't been setup already lets do that thing
+            if (command.Connection == null)
+            {
+                command.Connection = new NpgsqlConnection(DbFunctions.ConnectionString);
+                command.Connection.Open();
+            }
+            // if the connection is close we need to opens it
+            if (command.Connection.State == ConnectionState.Closed)
+                command.Connection.Open();
+
+            NpgsqlCommandBuilder.DeriveParameters(command);
+
+            foreach (KeyValuePair<string, object> pair in parameters)
+                command.Parameters[pair.Key].Value = pair.Value;
+        }
+
+        public static void AddParameters(this NpgsqlCommand command, List<NpgsqlParameter> parameters)
+        {
+            // if a connection hasn't been setup already lets do that thing
+            if (command.Connection == null)
+            {
+                command.Connection = new NpgsqlConnection(DbFunctions.ConnectionString);
+                command.Connection.Open();
+            }
+            // if the connection is close we need to opens it
+            if (command.Connection.State == ConnectionState.Closed)
+                command.Connection.Open();
+
+            NpgsqlCommandBuilder.DeriveParameters(command);
+
+            foreach (NpgsqlParameter parameter in parameters)
+            {
+                var commandParam = command.Parameters[parameter.ParameterName];
+                commandParam.Value = parameter.Value;
+                // 0 is not a valid type for a function, most likely this happens when there is an array involved.
+                if (commandParam.NpgsqlDbType == 0 || commandParam.DbType == 0)
+                    commandParam.NpgsqlDbType = parameter.NpgsqlDbType;
+            }
         }
     }
 }

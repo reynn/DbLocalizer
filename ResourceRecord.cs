@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using Npgsql;
@@ -35,15 +36,18 @@ namespace DbLocalizer
         {
             using (var conn = new NpgsqlConnection(string.IsNullOrEmpty(_connectionString) ? DbFunctions.ConnectionString : _connectionString))
             {
-                using (var cmd = new NpgsqlCommand("localize_save_resource") {CommandType = CommandType.StoredProcedure})
+                using (var cmd = new NpgsqlCommand("dblocalizer_save_resource") {CommandType = CommandType.StoredProcedure})
                 {
                     cmd.Connection = conn;
                     conn.Open();
 
-                    cmd.Parameters.AddWithValue("_resource_page", NpgsqlDbType.Text, Page.TrimStart('\\'));
-                    cmd.Parameters.AddWithValue("_culture_code", NpgsqlDbType.Text, CultureCode);
-                    cmd.Parameters.AddWithValue("_resource_key", NpgsqlDbType.Text, Key);
-                    cmd.Parameters.AddWithValue("_resource_value", NpgsqlDbType.Text, Value);
+                    cmd.AddParameters(new Dictionary<string, object>
+                    {
+                        {"_resource_page", Page.TrimStart('\\')},
+                        {"_culture_code", CultureCode},
+                        {"_resource_key", Key},
+                        {"_resource_value", Value}
+                    });
                     
                     bool success = bool.Parse(cmd.ExecuteScalar().ToString());
                     if (!success)

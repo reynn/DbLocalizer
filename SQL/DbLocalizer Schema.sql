@@ -178,9 +178,7 @@ $$
 declare
   _table_name text = 'dblocalizer_resources_';
   _page_name text;
-begin
-
-  _page_name := replace(replace(replace(replace(NEW.resourcepage, '\', '_'), '.Master', ''), '.ascx', ''), '.aspx', '');
+begin  _page_name := replace(replace(replace(replace(NEW.resourcepage, '\', '_'), '.Master', ''), '.ascx', ''), '.aspx', '');
   _table_name := _table_name || lower(_page_name);
 
   -- create a new table for this data if we dont have one yet.
@@ -199,7 +197,7 @@ begin
   END IF;
 
   -- upsert the data into the correct table.
-  IF localize_supports_upsert()
+  IF dblocalizer_supports_upsert()
   THEN
     execute format('insert into %s (resourcepage, culturecode, resourcekey, resourcevalue) '||
                   'values (%s, %s, %s, %s)'||
@@ -209,7 +207,7 @@ begin
                  quote_literal(new.resourcekey), quote_literal(new.resourcevalue),
                  quote_literal(new.resourcevalue));
   ELSE
-    perform localize_legacy_insert(_table_name, NEW.resourcepage, NEW.culturecode, NEW.resourcekey, NEW.resourcevalue);
+    perform dblocalizer_legacy_insert(_table_name, NEW.resourcepage, NEW.culturecode, NEW.resourcekey, NEW.resourcevalue);
   END IF;
 
   return null;
